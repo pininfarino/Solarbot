@@ -35,7 +35,7 @@ st.write("")
 st.write("")
 
 # 🌞 Titulek aplikace
-st.title('🌞 Solarbot – Osvit v ČR')
+st.title('🌞 Osvit v ČR')
 
 # 📊 Vykreslení grafu pomocí Matplotlib
 fig, ax = plt.subplots(figsize=(8, 5))
