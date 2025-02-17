@@ -10,7 +10,6 @@ SOLAR_IRRADIANCE = {
     'Liberec': 0.98
 }
 
-    max_baterie = vykon * 2.0  # 200 % výkonu
 # 🌞 Titulek aplikace
 st.title('🌞 Solarbot')
 st.subheader('Výpočet solární elektrárny a baterie')
