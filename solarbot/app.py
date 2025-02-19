@@ -1,4 +1,5 @@
 import streamlit as st
+import matplotlib.pyplot as plt
 
 # 🔆 Průměrné denní sluneční hodiny pro jednotlivá okresní města v ČR
 SUN_HOURS_BY_LOCATION = {
@@ -6,8 +7,8 @@ SUN_HOURS_BY_LOCATION = {
     "Brno": 4.0,
     "Ostrava": 3.6,
     "Plzeň": 4.1,
-    "České Budějovice": 4.2,
-    "Hradec Králové": 3.9,
+    "ČB": 4.2,
+    "Hradec K.": 3.9,
     "Liberec": 3.5,
     "Zlín": 3.8,
     "Olomouc": 3.7
@@ -57,3 +58,22 @@ result = calculate_pv_bess(annual_consumption_kwh, location, self_consumption_ra
 st.subheader("✅ Doporučené hodnoty:")
 st.write(f"🔆 **Potřebný výkon FVE:** `{result['Recommended PV Capacity (kWp)']} kWp`")
 st.write(f"🔋 **Doporučená kapacita baterie:** `{result['Recommended BESS Capacity (kWh)']} kWh`")
+
+st.write("")
+st.write("")
+st.write("")
+
+# 📊 Vykreslení grafu pomocí Matplotlib
+fig, ax = plt.subplots(figsize=(8, 5))
+ax.bar(SUN_HOURS_BY_LOCATION.keys(), SUN_HOURS_BY_LOCATION.values(), color='orange')
+
+# Popisky
+ax.set_xlabel("Město")
+ax.set_ylabel("Průměrné denní sluneční hodiny")
+ax.set_title("Porovnání průměrných denních slunečních hodin pro okresní města v ČR")
+ax.set_ylim(3.0, 4.5)  # Nastavení rozmezí osy Y pro lepší viditelnost rozdílů
+ax.grid(axis='y', linestyle='--', alpha=0.7)
+
+# 📊 Zobrazení grafu ve Streamlit
+st.subheader("📊 Porovnání slunečního svitu v různých městech")
+st.pyplot(fig)
