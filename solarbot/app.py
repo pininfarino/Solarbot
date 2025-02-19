@@ -77,3 +77,9 @@ ax.grid(axis='y', linestyle='--', alpha=0.7)
 # 📊 Zobrazení grafu ve Streamlit
 st.subheader("📊 Porovnání slunečního svitu v různých městech")
 st.pyplot(fig)
+
+st.write("")
+st.write("")
+
+# 🔗 Přidání odkazu na GitHub
+st.markdown("[📌 Zdrojový kód na GitHubu](https://github.com/pininfarino/Solarbot)", unsafe_allow_html=True)
