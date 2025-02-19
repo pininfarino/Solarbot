@@ -1,54 +1,81 @@
 import streamlit as st
-from calculations import calculate_solar_power  # Import výpočetní logiky
 import matplotlib.pyplot as plt
 
-# 🔆 Průměrný roční osvit pro jednotlivé okresy (hodnoty v MWh/m²/rok)
-SOLAR_IRRADIANCE = {
-    'Praha': 1.05,  # 1050 kWh/m²/rok → 1.05 MWh/m²/rok
-    'Brno': 1.02,
-    'Ostrava': 1.00,
-    'Plzeň': 1.03,
-    'Liberec': 0.98
+# 🔆 Průměrné denní sluneční hodiny pro jednotlivá okresní města v ČR
+SUN_HOURS_BY_LOCATION = {
+    "Praha": 3.8,
+    "Brno": 4.0,
+    "Ostrava": 3.6,
+    "Plzeň": 4.1,
+    "ČB": 4.2,
+    "Hradec K.": 3.9,
+    "Liberec": 3.5,
+    "Zlín": 3.8,
+    "Olomouc": 3.7
 }
 
-# 🌞 Titulek aplikace
-st.title('🌞 Solarbot')
-st.subheader('Výpočet solární elektrárny a baterie')
+def calculate_pv_bess(annual_consumption_kwh, location, self_consumption_ratio=0.7, bess_ratio=1.5, panel_efficiency=0.18):
+    """
+    Vypočítá optimální velikost solární elektrárny (kWp) a kapacitu baterie (kWh) na základě roční spotřeby elektřiny.
+
+    :param annual_consumption_kwh: Roční spotřeba elektřiny v kWh
+    :param location: Lokalita v ČR (ovlivňuje sluneční záření)
+    :param self_consumption_ratio: Očekávané procento FV energie využité na místě (default 70 %)
+    :param bess_ratio: Poměr kapacity baterie k výkonu FV systému (default 1.5:1)
+    :param panel_efficiency: Účinnost solárních panelů (default 18 %)
+
+    :return: Slovník s doporučenou kapacitou FVE a baterie
+    """
+    # Získání denních slunečních hodin pro lokalitu
+    daily_sun_hours = SUN_HOURS_BY_LOCATION.get(location, 3.8)  # Výchozí hodnota: Praha
+
+    # Výpočet potřebného výkonu FVE (kWp)
+    required_pv_capacity_kwp = (annual_consumption_kwh * self_consumption_ratio) / (daily_sun_hours * 365 * panel_efficiency)
+
+    # Výpočet optimální velikosti baterie (kWh)
+    bess_capacity_kwh = required_pv_capacity_kwp * bess_ratio
+
+    return {
+        "Location": location,
+        "Average Daily Sun Hours": daily_sun_hours,
+        "Recommended PV Capacity (kWp)": round(required_pv_capacity_kwp, 2),
+        "Recommended BESS Capacity (kWh)": round(bess_capacity_kwh, 2)
+    }
+
+# 🌞 Streamlit aplikace
+st.title("🌞 Solarbot – Optimalizace FVE a baterie pro rodinné domy")
 
 # 🔢 Uživatelský vstup
-spotreba_mwh = st.number_input('🔋 Zadejte roční spotřebu elektřiny (v MWh):', min_value=0.0)
-okres = st.selectbox('📍 Vyberte váš okres:', list(SOLAR_IRRADIANCE.keys()))
-ucinnost_panelu = st.slider('⚡ Zadejte účinnost panelů (%):', min_value=10, max_value=25, value=18)
+annual_consumption_kwh = st.number_input("🔋 Zadejte roční spotřebu elektřiny (v kWh):", min_value=1000, max_value=50000, value=5000, step=100)
+location = st.selectbox("📍 Vyberte své okresní město:", list(SUN_HOURS_BY_LOCATION.keys()))
+self_consumption_ratio = st.slider("⚡ Jaké procento FV energie přímo využijete?", min_value=0.5, max_value=1.0, value=0.7, step=0.05)
+bess_ratio = st.slider("🔋 Poměr velikosti baterie k výkonu FV (např. 1.5:1)", min_value=0.5, max_value=2.0, value=1.5, step=0.1)
 
-# 📊 Výpočet a výstup
-if spotreba_mwh > 0 and okres:
-    osvit_mwh = SOLAR_IRRADIANCE[okres]
-    ucinnost = ucinnost_panelu / 100  # Převod na desetinné číslo
-    vykon, min_baterie, max_baterie = calculate_solar_power(spotreba_mwh, osvit_mwh, ucinnost)
+# 📊 Automatický výpočet při změně vstupních hodnot
+result = calculate_pv_bess(annual_consumption_kwh, location, self_consumption_ratio, bess_ratio)
 
-    st.subheader('✅ Výsledky:')
-    st.write(f'**🔆 Potřebný výkon FVE:** `{vykon:.3f} MWp`')
-    st.write(f'**🔋 Doporučená kapacita baterie:** `{min_baterie:.3f} MWh` až `{max_baterie:.3f} MWh`')
-
+# ✅ Výstup výsledků
+st.subheader("✅ Doporučené hodnoty:")
+st.write(f"🔆 **Potřebný výkon FVE:** `{result['Recommended PV Capacity (kWp)']} kWp`")
+st.write(f"🔋 **Doporučená kapacita baterie:** `{result['Recommended BESS Capacity (kWh)']} kWh`")
 
 st.write("")
 st.write("")
-
-# 🌞 Titulek aplikace
-st.title('🌞 Osvit v ČR')
+st.write("")
 
 # 📊 Vykreslení grafu pomocí Matplotlib
 fig, ax = plt.subplots(figsize=(8, 5))
-ax.bar(SOLAR_IRRADIANCE.keys(), SOLAR_IRRADIANCE.values(), color='orange')
+ax.bar(SUN_HOURS_BY_LOCATION.keys(), SUN_HOURS_BY_LOCATION.values(), color='orange')
 
 # Popisky
 ax.set_xlabel("Město")
-ax.set_ylabel("Průměrný roční osvit (MWh/m²)")
-ax.set_title("Průměrný roční osvit v MWh/m² pro vybraná města")
-ax.set_ylim(0.9, 1.1)  # Nastavení rozmezí osy Y pro lepší viditelnost rozdílů
+ax.set_ylabel("Průměrné denní sluneční hodiny")
+ax.set_title("Porovnání průměrných denních slunečních hodin pro okresní města v ČR")
+ax.set_ylim(3.0, 4.5)  # Nastavení rozmezí osy Y pro lepší viditelnost rozdílů
 ax.grid(axis='y', linestyle='--', alpha=0.7)
 
 # 📊 Zobrazení grafu ve Streamlit
+st.subheader("📊 Porovnání slunečního svitu v různých městech")
 st.pyplot(fig)
 
 st.write("")
